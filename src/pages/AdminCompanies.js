@@ -77,6 +77,17 @@ const AdminCompanies = () => {
     }
   };
 
+  const handleReactivate = async (company) => {
+    if (!window.confirm(`${company.displayName} şirkətini yenidən aktivləşdirmək istədiyinizə əminsiniz?`)) return;
+    try {
+      await adminApi.put(`/companies/${company._id}`, { isActive: true });
+      toast.success('Şirkət və istifadəçi hesabı yenidən aktivləşdirildi');
+      fetchCompanies();
+    } catch (error) {
+      toast.error('Aktivləşdirmə uğursuz oldu');
+    }
+  };
+
   const handleSort = (field) => {
     if (sortBy === field) {
       setOrder(order === 'desc' ? 'asc' : 'desc');
@@ -156,8 +167,10 @@ const AdminCompanies = () => {
                     <td className="px-4 py-3 text-sm">
                       <div className="flex items-center gap-2">
                         <button onClick={() => handleEdit(c)} className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded" title="Redaktə et"><Edit className="w-4 h-4" /></button>
-                        {c.isActive && (
+                        {c.isActive ? (
                           <button onClick={() => handleDeactivate(c)} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Deaktiv et"><Power className="w-4 h-4" /></button>
+                        ) : (
+                          <button onClick={() => handleReactivate(c)} className="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Aktivləşdir"><Power className="w-4 h-4" /></button>
                         )}
                       </div>
                     </td>
