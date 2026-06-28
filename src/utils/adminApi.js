@@ -1,8 +1,11 @@
-import axios from 'axios';
-import { ADMIN_TOKEN_KEY, ADMIN_DATA_KEY } from './constants';
+import axios from "axios";
+import { ADMIN_TOKEN_KEY, ADMIN_DATA_KEY } from "./constants";
 
 const adminApi = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+  // baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+  baseURL:
+    "https://ticket-backend-eight.vercel.app/api" ||
+    "http://localhost:5000/api",
 });
 
 adminApi.interceptors.request.use((config) => {
@@ -19,28 +22,30 @@ adminApi.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem(ADMIN_TOKEN_KEY);
       localStorage.removeItem(ADMIN_DATA_KEY);
-      if (!window.location.pathname.startsWith('/admin/login')) {
-        window.location.href = '/admin/login';
+      if (!window.location.pathname.startsWith("/admin/login")) {
+        window.location.href = "/admin/login";
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export const adminTicketsAPI = {
-  list: (params) => adminApi.get('/tickets', { params }),
+  list: (params) => adminApi.get("/tickets", { params }),
   get: (id) => adminApi.get(`/tickets/${id}`),
-  patchStatus: (id, status) => adminApi.patch(`/tickets/${id}/status`, { status }),
+  patchStatus: (id, status) =>
+    adminApi.patch(`/tickets/${id}/status`, { status }),
   delete: (id) => adminApi.delete(`/tickets/${id}`),
 };
 
 export const adminCommentsAPI = {
   list: (ticketId) => adminApi.get(`/comments/ticket/${ticketId}`),
-  create: (ticketId, text) => adminApi.post(`/comments/ticket/${ticketId}`, { text }),
+  create: (ticketId, text) =>
+    adminApi.post(`/comments/ticket/${ticketId}`, { text }),
 };
 
 export const adminStatsAPI = {
-  admin: () => adminApi.get('/stats/admin'),
+  admin: () => adminApi.get("/stats/admin"),
 };
 
 export default adminApi;
