@@ -35,7 +35,7 @@ const UserResetPassword = () => {
     setLoading(true);
     try {
       await userApi.post('/auth/reset-password', { email, code: otp, newPassword });
-      toast.success('Şifrə uğurla dəyişdirildi! İndi login ola bilərsiniz.');
+      toast.success('Şifrə uğurla dəyişdirildi və email təsdiqləndi. İndi login ola bilərsiniz.');
       navigate('/login');
     } catch (error) {
       setErrorMessage(error.response?.data?.message || 'Şifrə dəyişdirilmədi');
