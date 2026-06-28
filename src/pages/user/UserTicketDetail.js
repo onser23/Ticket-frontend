@@ -148,7 +148,7 @@ const UserTicketDetail = () => {
       </div>
 
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-700">
-        💬 Admin cavabları və status dəyişiklikləri SP5/SP6-da əlavə olunacaq.
+        💬 Müraciət ilə bağlı müzakirələri aşağıda görə bilərsiniz.
       </div>
 
       <CommentThread
