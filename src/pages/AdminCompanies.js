@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Building2, Search, Edit, Power, Loader2, AlertCircle, X, Save } from 'lucide-react';
+import { Building2, Search, Edit, Power, Loader2, AlertCircle, X, Save, ChevronDown, ChevronUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import adminApi from '../utils/adminApi';
 
@@ -17,11 +17,15 @@ const AdminCompanies = () => {
   const [editError, setEditError] = useState('');
 
   const limit = 20;
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [order, setOrder] = useState('desc');
 
   const fetchCompanies = useCallback(async () => {
     setLoading(true);
     try {
       const params = { page, limit };
+      params.sortBy = sortBy;
+      params.order = order;
       if (search.trim()) params.search = search.trim();
       if (statusFilter !== 'all') params.status = statusFilter;
       const res = await adminApi.get('/companies', { params });
@@ -33,7 +37,7 @@ const AdminCompanies = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter]);
+  }, [page, search, statusFilter, sortBy, order]);
 
   useEffect(() => { fetchCompanies(); }, [fetchCompanies]);
 
@@ -71,6 +75,16 @@ const AdminCompanies = () => {
     } catch (error) {
       toast.error('Deaktiv etmə uğursuz oldu');
     }
+  };
+
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setOrder(order === 'desc' ? 'asc' : 'desc');
+    } else {
+      setSortBy(field);
+      setOrder('desc');
+    }
+    setPage(1);
   };
 
   return (
@@ -115,6 +129,15 @@ const AdminCompanies = () => {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Owner</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Email</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Status</th>
+                  <th
+                    onClick={() => handleSort('ticketCount')}
+                    className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase cursor-pointer hover:bg-slate-100"
+                  >
+                    <div className="flex items-center gap-1">
+                      Müraciət sayı
+                      {sortBy === 'ticketCount' && (order === 'desc' ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />)}
+                    </div>
+                  </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Əməliyyat</th>
                 </tr>
               </thead>
@@ -123,12 +146,13 @@ const AdminCompanies = () => {
                   <tr key={c._id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 text-sm font-medium text-slate-900">{c.displayName}</td>
                     <td className="px-4 py-3 text-sm text-slate-600">{c.ownerUserId?.firstName} {c.ownerUserId?.lastName}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{c.contactEmail || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{c.ownerUserId?.email || '-'}</td>
                     <td className="px-4 py-3 text-sm">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${c.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
-                        {c.isActive ? 'Aktiv' : 'Passiv'}
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_BADGES[getStatusKey(c)].className}`}>
+                        {STATUS_BADGES[getStatusKey(c)].label}
                       </span>
                     </td>
+                    <td className="px-4 py-3 text-sm text-slate-900 font-medium">{c.ticketCount}</td>
                     <td className="px-4 py-3 text-sm">
                       <div className="flex items-center gap-2">
                         <button onClick={() => handleEdit(c)} className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded" title="Redaktə et"><Edit className="w-4 h-4" /></button>
@@ -196,5 +220,17 @@ const AdminCompanies = () => {
     </div>
   );
 };
+
+const STATUS_BADGES = {
+  active_verified: { label: 'Təsdiqlənmiş', className: 'bg-green-100 text-green-700' },
+  active_unverified: { label: 'Doğrulanmamış', className: 'bg-yellow-100 text-yellow-700' },
+  passive: { label: 'Passiv', className: 'bg-slate-100 text-slate-600' },
+};
+
+function getStatusKey(company) {
+  if (!company.isActive) return 'passive';
+  if (company.ownerUserId?.isVerified) return 'active_verified';
+  return 'active_unverified';
+}
 
 export default AdminCompanies;
