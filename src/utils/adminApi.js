@@ -2,10 +2,10 @@ import axios from "axios";
 import { ADMIN_TOKEN_KEY, ADMIN_DATA_KEY } from "./constants";
 
 const adminApi = axios.create({
-  // baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
-  baseURL:
-    "https://ticket-backend-eight.vercel.app/api" ||
-    "http://localhost:5000/api",
+  baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000/api",
+  // baseURL:
+  //   "https://ticket-backend-eight.vercel.app/api" ||
+  //   "http://localhost:5000/api",
 });
 
 adminApi.interceptors.request.use((config) => {
