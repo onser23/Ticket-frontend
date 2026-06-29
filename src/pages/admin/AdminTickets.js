@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Inbox, Search, Filter, Loader2, Trash2, Eye } from 'lucide-react';
+import { Inbox, Search, Filter, Loader2, Trash2, Eye, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import adminApi, { adminTicketsAPI } from '../../utils/adminApi';
 
@@ -44,9 +44,11 @@ const AdminTickets = () => {
   useEffect(() => {
     (async () => {
       try {
-        const res = await adminApi.list({ limit: 100 });
+        const res = await adminApi.get('/companies', { params: { limit: 100 } });
         setCompanies(res.data.data || []);
-      } catch (e) { console.error(e); }
+      } catch (e) {
+        toast.error('Şirkətlər yüklənmədi');
+      }
     })();
   }, []);
 
