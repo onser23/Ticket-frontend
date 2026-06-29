@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, RotateCcw } from 'lucide-react';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Bütün statuslar' },
@@ -20,13 +20,19 @@ const TicketFilters = ({ filters, onChange }) => {
     onChange({ ...filters, [key]: value, page: 1 });
   };
 
+  const handleReset = () => {
+    onChange({ search: '', status: '', priority: '', page: 1, limit: 20 });
+  };
+
+  const isFiltered = !!(filters.search || filters.status || filters.priority);
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
       <div className="flex items-center gap-2 mb-3">
         <Filter className="w-4 h-4 text-slate-400" />
         <span className="text-sm font-medium text-slate-700">Filterlər</span>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <div className="relative md:col-span-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
           <input
@@ -51,6 +57,15 @@ const TicketFilters = ({ filters, onChange }) => {
         >
           {PRIORITY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
+        <button
+          type="button"
+          onClick={handleReset}
+          disabled={!isFiltered}
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed text-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+        >
+          <RotateCcw className="w-4 h-4" />
+          <span>Filteri sıfırla</span>
+        </button>
       </div>
     </div>
   );
