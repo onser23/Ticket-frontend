@@ -8,9 +8,10 @@ import { validateEmail, validateName, validatePassword, validateRequired } from 
 const UserProfile = () => {
   const { user, updateUser } = useUserAuth();
   const [profileData, setProfileData] = useState({ firstName: '', lastName: '', email: '' });
-  const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '' });
+  const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [showCurrentPw, setShowCurrentPw] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
   const [profileError, setProfileError] = useState('');
@@ -53,12 +54,15 @@ const UserProfile = () => {
     if (currErr) return setPasswordError(currErr);
     const newErr = validatePassword(passwordData.newPassword);
     if (newErr) return setPasswordError(newErr);
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      return setPasswordError('Yeni şifrə və təkrarı uyğun deyil');
+    }
 
     setSavingPassword(true);
     try {
-      await userApi.put('/profile/password', passwordData);
+      await userApi.put('/profile/password', passwordData, { _skipAuthRedirect: true });
       toast.success('Şifrə uğurla dəyişdirildi');
-      setPasswordData({ currentPassword: '', newPassword: '' });
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error) {
       setPasswordError(error.response?.data?.message || 'Şifrə dəyişdirilmədi');
     } finally {
@@ -146,6 +150,23 @@ const UserProfile = () => {
               <input type={showNewPw ? 'text' : 'password'} value={passwordData.newPassword} onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})} disabled={savingPassword} className="w-full pl-10 pr-10 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-60" />
               <button type="button" onClick={() => setShowNewPw(!showNewPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                 {showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Yeni şifrənin təkrarı</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              <input
+                type={showConfirmPw ? 'text' : 'password'}
+                value={passwordData.confirmPassword}
+                onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                disabled={savingPassword}
+                className="w-full pl-10 pr-10 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-60"
+              />
+              <button type="button" onClick={() => setShowConfirmPw(!showConfirmPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                {showConfirmPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
           </div>
