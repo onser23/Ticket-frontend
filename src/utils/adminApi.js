@@ -16,10 +16,12 @@ adminApi.interceptors.request.use((config) => {
   return config;
 });
 
+// Skip flag istifadəsi: axios call-da `{ _skipAuthRedirect: true }` 3-cü argument kimi ötürülür.
+// Bu, 401 qaytaran endpoint-lərdə (məs. səhv current password) logout-un qarşısını alır.
 adminApi.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !error.config?._skipAuthRedirect) {
       localStorage.removeItem(ADMIN_TOKEN_KEY);
       localStorage.removeItem(ADMIN_DATA_KEY);
       if (!window.location.pathname.startsWith("/admin/login")) {
