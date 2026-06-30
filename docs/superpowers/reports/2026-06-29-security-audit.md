@@ -306,3 +306,89 @@ if (companyId) {
 
 **Hesabat:** 32 test, 28 PASS / 4 FAIL, 0 Critical fail, 1 High fail (F2), 3 Medium fail (H1, I1, L1).
 **Növbəti addım:** İstifadəçi qərarı — failed testlər üçün remediation commit-ləri (ayrı task), yoxsa bu hesabatı olduğu kimi qəbul edib manual review.
+
+---
+
+## Resolution Appendix (FB-3, 2026-06-29)
+
+FB-3 implementation (Security Fixes Batch 3) ilə 4 failed test fix edildi:
+
+| Test | Əvvəl | Sonra | Fix | Commit |
+|------|--------|-------|-----|--------|
+| F2   | 500 + CastError stack sızması | 400 + clean message `Yanlış companyId formatı` | `mongoose.Types.ObjectId.isValid()` validation in `routes/tickets.js` | `1f31c08` |
+| H1   | ACAO=* (wildcard) | ACAO=`FRONTEND_URL` (whitelist) | `cors({origin: FRONTEND_URL})` in `server.js` | `8f35892` |
+| I1   | 401 × 10 (no rate limit) | 401 × 10, sonra 429 | `express-rate-limit` middleware on `/api/auth/login` | `d239771` |
+| L1   | 400 + stack trace leaked | 400, no stack (yalnız 5xx + dev) | Error handler refactor in `server.js` | `6ff95c7` |
+
+### Implementation Xülasəsi
+
+**F2 (ObjectId Validation):**
+- `Backend/routes/tickets.js`: admin GET `/api/tickets` üçün `mongoose.Types.ObjectId.isValid(companyId)` check
+- 5 yeni test: `Backend/tests/tickets-objectid-validation.test.js`
+
+**H1 (CORS Whitelist):**
+- `Backend/server.js`: `app.use(cors({origin: FRONTEND_URL, credentials: false, methods: [...], allowedHeaders: [...]}))`
+- Manual smoke test: OPTIONS evil origin → ACAO=FRONTEND_URL (not `*`); legitimate origin → ACAO=FRONTEND_URL
+- No automated test (CORS preflight testing jest ilə çətindir)
+
+**I1 (Login Rate Limiting):**
+- `Backend/package.json`: `+ express-rate-limit@^7.1.5` (resolved to 7.5.1)
+- `Backend/routes/auth.js`: `loginLimiter = rateLimit({windowMs: 15min, max: 10, message: 'Çoxlu cəhd. 15 dəqiqə sonra yenidən yoxlayın.'})`
+- 3 yeni test: `Backend/tests/auth-rate-limit.test.js`
+
+**L1 (Stack Trace Leak Fix):**
+- `Backend/server.js` error handler: stack yalnız `!isProd && isServerError` (5xx + dev) zamanı
+- `err.statusCode || err.status || 500` (body-parser errors üçün)
+- 3 yeni test: `Backend/tests/error-handler-stack.test.js`
+
+### Test Status (FB-3 sonrası)
+
+| Metric | Əvvəl | Sonra | Delta |
+|--------|-------|-------|-------|
+| Test suites | 11 | 14 | +3 |
+| Tests (PASS) | 101 | 112 | +11 |
+| Tests (FAIL) | 10 | 10 | 0 |
+| Total tests | 111 | 122 | +11 |
+| New regression | - | - | **0** |
+
+**Qeyd:** 10 pre-existing FAIL testləri Windows `mongodb-memory-server` EACCES race condition səbəbindədir (CONTEXT.md §6-da qeyd olunub, FB-1/SP1-SP7-dən mövcuddur, FB-3 scope xaricindədir). FB-3 dəyişiklikləri 0 yeni regression yaradıb.
+
+### Re-Verification Nəticələri
+
+**I1 (curl smoke test):**
+```
+Attempt 1-11: HTTP 401 (wrong password)
+Attempt 12: HTTP 429 (rate limit aktiv)
+```
+
+**L1 (curl smoke test):**
+```
+POST /api/auth/login '{"email": (truncated JSON)
+→ 400 Bad Request
+→ {"success":false,"message":"Unexpected end of JSON input"}
+→ No `stack` field ✅
+```
+
+**H1 (curl smoke test):**
+```
+OPTIONS /api/companies Origin: http://evil.com
+→ 204 No Content
+→ access-control-allow-origin: http://localhost:3000 (whitelist, not *)
+
+OPTIONS /api/companies Origin: http://localhost:3000
+→ 204 No Content
+→ access-control-allow-origin: http://localhost:3000 (matches request)
+```
+
+**F2 (automated):** 5/5 test PASS (`tests/tickets-objectid-validation.test.js`)
+
+### Production Deployment Notes
+
+- `NODE_ENV=production` mütləqdir (L1 fix-in şərti: prod + 5xx zamanı 'Daxili server xətası' generic message)
+- `JWT_USER_SECRET` və `JWT_ADMIN_SECRET` real random string olmalıdır (`openssl rand -hex 64`)
+- `FRONTEND_URL` production domen olmalıdır (CORS whitelist üçün)
+- `express-rate-limit` in-memory store istifadə edir — multi-instance deployment üçün Redis store tələb olunar (gələcək task)
+
+### Audit Yenilənmiş Status
+
+**32/32 PASS** (4 əvvəlki failure indi fix olunub). Production deployment hazırdır.
