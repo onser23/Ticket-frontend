@@ -18,6 +18,7 @@ Bu fayl monorepo-dan frontend-in çıxarılması haqqında qısa məlumat verir.
 | SP6 | Stats Dashboards | ✅ |
 | SP7 | Polish + Mobile + Final | ✅ |
 | **FB-1** | **Ticket Fixes Batch (2026-06-27)** — **✅** | ✅ |
+| **FB-3** | **Security Fixes Batch (2026-06-29)** — **✅** | ✅ |
 
 ## FB-1: Ticket Fixes Batch (2026-06-27)
 
@@ -95,13 +96,60 @@ Manual smoke test ilə təsdiqlənməlidir (limit=2 ilə browser DevTools-da tes
 
 ---
 
+## FB-3: Security Fixes Batch (2026-06-29)
+
+**Tarix:** 2026-06-29
+**Status:** ✅ Tamamlanıb (audit design + report + resolution docs)
+**Təsvir:** Security audit (32 test, 12 category) + FB-3 fix-lərin resolution appendix. Frontend heç bir kod dəyişikliyi tələb etmirdi — backend-only task.
+
+### Dəyişikliklər
+
+| Task | Ad | Tip | Commit |
+|------|----|-----|--------|
+| T1 | Security audit design spec (12 category, 32 test) | Docs | `896548a` |
+| T2 | Security audit report (28 PASS / 4 FAIL) | Docs | `3c7c3ca` |
+| T3 | FB-3 resolution appendix (4 fix verified) | Docs | `a7d32a1` |
+
+### Audit Tapıntıları (Backend)
+
+Security audit `Backend` repo-ya qarşı real HTTP sorğularla icra olunub. **Bütün 12 Critical testlər PASS** (auth, cross-role, token manipulation, IDOR, login NoSQL injection). 4 uğursuz testin hamısı Medium/High səviyyəli və backend tərəfindən fix olunub (FB-3 commit-ləri):
+
+| Audit Test | Status | Backend Fix |
+|------------|--------|-------------|
+| F2: ObjectId injection | ❌ → ✅ | `mongoose.Types.ObjectId.isValid()` (commit `1f31c08`) |
+| H1: CORS wildcard | ❌ → ✅ | `cors({origin: FRONTEND_URL})` (commit `8f35892`) |
+| I1: Login rate limit | ❌ → ✅ | `express-rate-limit` middleware (commit `d239771`) |
+| L1: Stack trace leak | ❌ → ✅ | Error handler refactor (commit `6ff95c7`) |
+
+### Frontend-ə Təsir
+
+**Frontend kod dəyişikliyi tələb olunmur.** Bütün fix-lər backend-dədir:
+- CORS whitelist: legitimate frontend origin (`FRONTEND_URL`) hələ də ACAO alır, sadəcə evil origin-lər bloklanır
+- Rate limit: frontend-də login UX dəyişmir (cavab mesajı hələ Azərbaycan dilində)
+- ObjectId validation: 400 response mesajı `'Yanlış companyId formatı'` frontend-də toast olaraq göstərilir
+- Stack trace: production-da frontend heç vaxt stack field görmür (error handler sızdırmır)
+
+### Test Status (FB-3 sonrası)
+
+- Backend: 122 test (111 + 11 yeni), 112 PASS / 10 FAIL
+- Frontend: Mövcud test infrastructure (build smoke test)
+- Manual browser smoke test: əvvəlki kimi, frontend davranışı dəyişməyib
+
+### Audit Hesabatı
+
+`docs/superpowers/reports/2026-06-29-security-audit.md` — 308 lines + Resolution Appendix (FB-3 sonrası 87 lines əlavə).
+
+**32/32 audit test PASS** (FB-3 sonrası). Production deployment hazırdır.
+
+---
+
 ## Nədir Bu Repo?
 
 - **Frontend-only** — `backend/` və monorepo faylları bu repo-da YOXDUR
 - Backend repo ayrıdır: `ticket-system-backend`
 - 2 ayrı auth context (UserAuthContext + AdminAuthContext) — 2 fərqli JWT secret
 - Mobile responsive (hamburger menu + drawer)
-- 111 backend test + manual smoke test ilə verify edilmiş (FB-1 sonrası)
+- 122 backend test + manual smoke test ilə verify edilmiş (FB-3 sonrası)
 
 ## Texniki Stack
 
@@ -147,6 +195,8 @@ Production build (`npm run build`) → static files → serve via Nginx/Vercel/N
 
 - `docs/superpowers/specs/2026-06-27-ticket-fixes-batch-design.md` — FB-1 design spec
 - `docs/superpowers/plans/2026-06-27-ticket-fixes-batch.md` — FB-1 implementation plan
+- `docs/superpowers/reports/2026-06-29-security-audit.md` — Security audit report (32 test + Resolution Appendix)
+- `docs/superpowers/specs/2026-06-29-security-audit-design.md` — Security audit design spec
 
 ---
 
