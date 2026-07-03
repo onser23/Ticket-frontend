@@ -19,6 +19,7 @@ Bu fayl monorepo-dan frontend-in çıxarılması haqqında qısa məlumat verir.
 | SP7 | Polish + Mobile + Final | ✅ |
 | **FB-1** | **Ticket Fixes Batch (2026-06-27)** — **✅** | ✅ |
 | **FB-3** | **Security Fixes Batch (2026-06-29)** — **✅** | ✅ |
+| **AS-1** | **Auto-Seed on Server Start (2026-07-02)** — **Backend dəyişikliyi** | ✅ |
 
 ## FB-1: Ticket Fixes Batch (2026-06-27)
 
@@ -149,7 +150,41 @@ Security audit `Backend` repo-ya qarşı real HTTP sorğularla icra olunub. **B�
 - Backend repo ayrıdır: `ticket-system-backend`
 - 2 ayrı auth context (UserAuthContext + AdminAuthContext) — 2 fərqli JWT secret
 - Mobile responsive (hamburger menu + drawer)
-- 122 backend test + manual smoke test ilə verify edilmiş (FB-3 sonrası)
+- 125 backend test + manual smoke test ilə verify edilmiş (AS-1 sonrası)
+
+---
+
+## AS-1: Auto-Seed on Server Start (2026-07-02) — Backend Cross-Repo Qeyd
+
+**Tarix:** 2026-07-02
+**Status:** ✅ Backend-də tamamlanıb (5/5 task + 5 commit)
+**Təsvir:** Backend-də default admin indi `npm start` zamanı avtomatik yaranır (development mühitdə). Production-da manual `npm run seed` tələb olunur.
+
+### Frontend-ə Təsir
+
+**Heç bir frontend kod dəyişikliyi tələb olunmur.** Backend davranışı dəyişib:
+
+- **Development (local `npm start`):** DB sıfır olsa belə, default admin (`admin / admin123`) avtomatik yaranır — login problemsiz işləyir
+- **Production:** Manual `npm run seed` lazımdır (deployment script-ə əlavə olunmalı)
+- **Test:** Mövcud davranış qorunur (server.js xarici guard test mode-da skip edir)
+
+### Test Status
+
+- Backend: 125/125 PASS (122 mövcud + 3 yeni seed test)
+- 5 əvvəlki FAIL testlər düzəldi (Windows mongodb-memory-server race, `readyState === 1` check sayəsində)
+- Frontend build: dəyişiklik yoxdur
+
+### Backend Commit-lər (cross-reference)
+
+| Commit | Task |
+|--------|------|
+| `ddd2ab3` | test(seed): add 3 failing tests for auto-seed |
+| `ac6782d` | fix(seed,db): remove disconnectDB, add URI guard + readyState |
+| `e5f91d9` | feat(server): auto-seed default admin on start |
+| `78eac41` | docs(spec): add auto-seed design |
+| `dba7049` | docs(plan): add auto-seed implementation plan |
+
+Manual smoke test üçün `Ticket-Backend/CONTEXT.md` §AS-1-ə baxın (5 ssenari).
 
 ## Texniki Stack
 
